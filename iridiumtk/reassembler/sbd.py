@@ -479,8 +479,8 @@ class ReassembleIDASBDlibACARS(ReassembleIDASBD):
             for key in ('reg:tail', 'label', 'blk_id:block_id', 'msg_num_seq:message_number', 'ack', 'msg_text:text', 'more:block_end'):
                 old, _, new = key.partition(':')
                 if new == '': new = old
-                if old in out['acars'].__dict__:
-                    val = out['acars'].__dict__[old]
+                if old in out['acars'].keys():
+                    val = out['acars'][old]
                     if isinstance(val, bytes):
                         val = val.decode('ascii')
                     if old == 'label':
