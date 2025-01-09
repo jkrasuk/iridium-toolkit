@@ -464,16 +464,43 @@ class ReassembleIDASBDlibACARS(ReassembleIDASBD):
 
         q.timestamp = dt.epoch(q.time).isoformat(timespec='seconds')
 
+        while len(q.f_reg)>0 and q.f_reg[0:1]==b'.':
+            q.f_reg=q.f_reg[1:]
+
         if 'json' in config.args:
             out = {}
 
             out['app'] = { 'name': 'iridium-toolkit', 'version': '0.0.2' }
             out['source'] = { 'transport': 'iridium', 'parser': 'libacars', 'version': libacars.version }
-            out['timestamp'] = q.timestamp
-            out['link_direction'] = 'uplink' if q.ul else 'downlink'
             if config.station:
                 out['source']['station_id'] = config.station
-            out['acars']=json.loads(o.json())['acars']
+            out['acars'] = json.loads(o.json())['acars']
+            out['acars']['timestamp'] = q.timestamp
+            out['acars']['errors'] = len(q.errors)
+            out['acars']['link_direction'] = 'uplink' if q.ul else 'downlink'
+
+            for key in ('reg:tail', 'label', 'blk_id:block_id', 'msg_num_seq:message_number', 'ack', 'msg_text:text', 'more:block_end'):
+                old, _, new = key.partition(':')
+                if new == '': new = old
+                if old in out['acars'].__dict__:
+                    val = out['acars'].__dict__[old]
+                    if isinstance(val, bytes):
+                        val = val.decode('ascii')
+                    if old == 'label':
+                        val = val.replace('_\u007f', '_d')
+                    if old == 'ack':
+                        val = val.replace('\u0015', '!')
+                    if old = 'reg':
+                        while len(val)>0 and val[0:1]==b'.':
+                            val=val[1:]
+                    if old == 'more':
+                        val = not val
+                    out['acars'][new] = val
+            
+            out['freq'] = self.ofreq
+            out['level'] = self.olevel
+            out['header'] = q.hdr.hex()
+
             print(json.dumps(out), file=outfile)
             return
 
