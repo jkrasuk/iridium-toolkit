@@ -490,7 +490,7 @@ class ReassembleIDASBDlibACARS(ReassembleIDASBD):
                         val = val.replace('_\u007f', '_d')
                     if old == 'ack':
                         val = val.replace('\u0015', '!')
-                    if old = 'reg':
+                    if old == 'reg':
                         while len(val)>0 and val[0:1]==b'.':
                             val=val[1:]
                     if old == 'more':
