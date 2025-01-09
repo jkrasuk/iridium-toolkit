@@ -464,9 +464,6 @@ class ReassembleIDASBDlibACARS(ReassembleIDASBD):
 
         q.timestamp = dt.epoch(q.time).isoformat(timespec='seconds')
 
-        while len(q.f_reg)>0 and q.f_reg[0:1]==b'.':
-            q.f_reg=q.f_reg[1:]
-
         if 'json' in config.args:
             out = {}
 
@@ -476,7 +473,7 @@ class ReassembleIDASBDlibACARS(ReassembleIDASBD):
                 out['source']['station_id'] = config.station
             out['acars'] = json.loads(o.json())['acars']
             out['acars']['timestamp'] = q.timestamp
-            out['acars']['errors'] = len(q.errors)
+            out['acars']['errors'] = int(out["acars"]["err"] == 'true')
             out['acars']['link_direction'] = 'uplink' if q.ul else 'downlink'
 
             for key in ('reg:tail', 'label', 'blk_id:block_id', 'msg_num_seq:message_number', 'ack', 'msg_text:text', 'more:block_end'):
@@ -491,15 +488,18 @@ class ReassembleIDASBDlibACARS(ReassembleIDASBD):
                     if old == 'ack':
                         val = val.replace('\u0015', '!')
                     if old == 'reg':
-                        while len(val)>0 and val[0:1]==b'.':
-                            val=val[1:]
+                        while len(val)>0 and val[0:1]=='.':
+                            val = val[1:]
                     if old == 'more':
                         val = not val
                     out['acars'][new] = val
             
             out['freq'] = self.ofreq
             out['level'] = self.olevel
-            out['header'] = q.hdr.hex()
+            if q.data[1] == 0x3:
+                out['header'] = q.data[1:9].hex()
+            else:
+                out['header'] = ""
 
             print(json.dumps(out), file=outfile)
             return
